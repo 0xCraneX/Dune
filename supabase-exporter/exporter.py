@@ -12,7 +12,7 @@ from datetime import datetime
 from typing import Dict, List, Optional
 
 import config
-from database import SupabaseClient
+from database import PostgreSQLClient
 from models import ExportMetadata, TableMetadata, extract_date_range, detect_has_timestamp_fields
 from utils import (
     create_export_directory,
@@ -36,7 +36,7 @@ class DatabaseExporter:
         """
         self.output_base_dir = output_base_dir
         self.export_dir: Optional[Path] = None
-        self.client: Optional[SupabaseClient] = None
+        self.client: Optional[PostgreSQLClient] = None
         self.metadata: Optional[ExportMetadata] = None
         self.errors: List[Dict] = []
 
@@ -54,10 +54,10 @@ class DatabaseExporter:
         self.export_dir = create_export_directory(self.output_base_dir)
         print(f"Starting export to: {self.export_dir}/\n")
 
-        # Initialize Supabase client
+        # Initialize PostgreSQL client
         print("Connecting to database...")
         try:
-            self.client = SupabaseClient(config.SUPABASE_URL, config.SUPABASE_KEY)
+            self.client = PostgreSQLClient(config.DATABASE_URL)
             print("✓ Connected successfully\n")
         except Exception as e:
             print(f"✗ Connection failed: {e}")
@@ -374,7 +374,7 @@ Examples:
         # Single table export
         print(f"Exporting table: {args.table}\n")
         exporter.export_dir = create_export_directory(args.output)
-        exporter.client = SupabaseClient(config.SUPABASE_URL, config.SUPABASE_KEY)
+        exporter.client = PostgreSQLClient(config.DATABASE_URL)
         success, rows = exporter.export_single_table(args.table)
 
         if success:

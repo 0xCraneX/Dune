@@ -14,8 +14,7 @@ load_dotenv()
 # Environment Variables
 # ============================================================================
 
-SUPABASE_URL = os.getenv('SUPABASE_URL', '')
-SUPABASE_KEY = os.getenv('SUPABASE_KEY', '')
+DATABASE_URL = os.getenv('DATABASE_URL', '')
 
 # ============================================================================
 # Export Constants
@@ -92,18 +91,15 @@ def validate_config() -> bool:
     errors = []
 
     # Check required environment variables
-    if not SUPABASE_URL:
-        errors.append("SUPABASE_URL is not set")
-    elif not SUPABASE_URL.startswith('https://'):
-        errors.append("SUPABASE_URL must start with https://")
-
-    if not SUPABASE_KEY:
-        errors.append("SUPABASE_KEY is not set")
+    if not DATABASE_URL:
+        errors.append("DATABASE_URL is not set")
+    elif not DATABASE_URL.startswith('postgresql://'):
+        errors.append("DATABASE_URL must be a valid PostgreSQL connection string (postgresql://...)")
 
     # If there are errors, raise exception
     if errors:
         error_msg = "Configuration validation failed:\n" + "\n".join(f"  - {err}" for err in errors)
-        error_msg += "\n\nPlease check your .env file and ensure all required variables are set."
+        error_msg += "\n\nPlease check your .env file and ensure DATABASE_URL is set."
         raise ValueError(error_msg)
 
     return True
@@ -112,8 +108,7 @@ def validate_config() -> bool:
 def print_config_summary() -> None:
     """Print a summary of the current configuration."""
     print("Configuration:")
-    print(f"  Database URL: {sanitize_url(SUPABASE_URL)}")
-    print(f"  API Key: {'*' * 20}{SUPABASE_KEY[-8:] if len(SUPABASE_KEY) > 8 else '***'}")
+    print(f"  Database: {sanitize_db_url(DATABASE_URL)}")
     print(f"  Batch Size: {BATCH_SIZE}")
     print(f"  Max Retries: {MAX_RETRIES}")
     print(f"  Tables to Export: {len(EXPORT_TABLES)}")
@@ -141,3 +136,32 @@ def sanitize_url(url: str) -> str:
         return f"{parts[0]}//{parts[2]}"
 
     return url
+
+
+def sanitize_db_url(db_url: str) -> str:
+    """
+    Remove sensitive parts from database URL for logging.
+    Hides password but shows host and database.
+
+    Args:
+        db_url: PostgreSQL connection string
+
+    Returns:
+        Sanitized connection string
+    """
+    if not db_url:
+        return ""
+
+    # Parse postgresql://user:password@host:port/database
+    if '://' in db_url:
+        try:
+            protocol, rest = db_url.split('://', 1)
+            if '@' in rest:
+                credentials, host_db = rest.split('@', 1)
+                user = credentials.split(':')[0]
+                return f"{protocol}://{user}:***@{host_db}"
+            return db_url
+        except:
+            return "postgresql://***"
+
+    return db_url

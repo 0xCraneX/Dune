@@ -1,14 +1,16 @@
 # Nova Shots Database Exporter
 
-A Python CLI tool that exports all data from the Nova Shots Supabase database to JSON files for monthly analysis. Preserves data integrity, relationships, and timestamps while handling 30 tables with up to 50k rows each.
+A Python CLI tool that exports all data from the Nova Shots Supabase/PostgreSQL database to JSON files for monthly analysis. Connects directly to PostgreSQL for fast, reliable exports. Preserves data integrity, relationships, and timestamps while handling 30 tables with up to 50k rows each.
 
 **Primary Use Case:** Monthly export for Claude analysis of player metrics, trades, bans, and sponsorship deliverables.
 
 ## Features
 
+- ✅ Direct PostgreSQL connection (fast and reliable)
 - ✅ Exports 27 tables (excludes 3 system tables)
 - ✅ Preserves data types, timestamps, and relationships
 - ✅ Handles large tables (up to 50k+ rows)
+- ✅ Server-side cursors for memory efficiency
 - ✅ Generates comprehensive metadata for Claude analysis
 - ✅ Progress bars and user-friendly output
 - ✅ Automatic retry with exponential backoff
@@ -18,8 +20,8 @@ A Python CLI tool that exports all data from the Nova Shots Supabase database to
 ## Requirements
 
 - Python 3.8 or higher
-- Supabase project with Nova Shots database
-- Supabase API key (anon key or service role key)
+- PostgreSQL database connection string
+- Direct network access to database (run locally, not in sandboxed environments)
 
 ## Installation
 
@@ -38,10 +40,10 @@ pip install -r requirements.txt
 Or install packages individually:
 
 ```bash
-pip install supabase python-dotenv tqdm
+pip install psycopg2-binary python-dotenv tqdm
 ```
 
-### 3. Configure environment variables
+### 3. Configure database connection
 
 Copy the example environment file:
 
@@ -49,21 +51,28 @@ Copy the example environment file:
 cp .env.example .env
 ```
 
-Edit `.env` with your Supabase credentials:
+Edit `.env` with your PostgreSQL connection string:
 
 ```env
-SUPABASE_URL=https://your-project.supabase.co
-SUPABASE_KEY=your-anon-or-service-key
+DATABASE_URL=postgresql://postgres:your-password@db.your-project.supabase.co:5432/postgres
 ```
 
-**Where to find your credentials:**
+**Connection String Format:**
+```
+postgresql://username:password@host:port/database
+```
 
+**Where to find your connection details:**
+
+For Supabase projects:
 1. Log into [Supabase dashboard](https://supabase.com/dashboard)
 2. Select your project
-3. Go to **Settings** → **API**
-4. Copy the **URL** and **anon key** (or **service_role key** for full access)
+3. Go to **Settings** → **Database**
+4. Find the **Connection String** section
+5. Use the **Connection string** (not the pooler)
+6. Replace `[YOUR-PASSWORD]` with your actual database password
 
-**Important:** Use the **service role key** if you need to bypass Row Level Security (RLS) policies and export all data.
+**Important:** This tool requires direct database access and must be run on a machine that can connect to your PostgreSQL server (e.g., your local computer, not in sandboxed/cloud environments).
 
 ## Usage
 
